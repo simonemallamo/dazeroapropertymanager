@@ -61,6 +61,8 @@ main{max-width:880px;margin:0 auto;padding:32px 20px 64px}
 .lock p{color:var(--mut);margin-bottom:20px}
 @media(max-width:560px){.hero{flex-direction:column;align-items:flex-start}.ring{width:104px}.ring span{font-size:24px}}
 @media(prefers-reduced-motion:no-preference){.row{transition:background .15s}}
+.gc{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--navy);color:#fff;border-radius:12px;padding:20px 24px}
+.gc b{font-weight:500;font-size:17px}.gc p{color:#C9D3E3;font-size:14px}.gc .btn{text-decoration:none}
 </style>
 </head>
 <body>
@@ -90,7 +92,7 @@ main{max-width:880px;margin:0 auto;padding:32px 20px 64px}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 /* ====== DA COMPILARE ====== */
@@ -98,7 +100,7 @@ const firebaseConfig = {
   apiKey: "INCOLLA_QUI", authDomain: "INCOLLA_QUI", projectId: "INCOLLA_QUI",
   storageBucket: "INCOLLA_QUI", messagingSenderId: "INCOLLA_QUI", appId: "INCOLLA_QUI"
 };
-const BUY_URL = "https://";            // pagina di acquisto di Fast Start
+const BUY_URL = "https://";            // link Stripe di Fast Start (buy.stripe.com/...)
 const SUPPORT = "email@tuodominio.com"; // email di assistenza
 /* ========================== */
 
@@ -116,7 +118,7 @@ const LESSONS = [
 
 const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getFirestore(app);
 const $ = id => document.getElementById(id);
-let user, entitled = false, done = {}, signup = false;
+let user, entitled = false, hasFS = false, done = {}, signup = false;
 
 // Sorgente video: YouTube ora, Bunny dopo (basta cambiare il documento su Firestore)
 function embed(v) {
@@ -146,7 +148,8 @@ $("go").onclick = async () => {
   $("go").disabled = true; say("");
   try {
     const f = signup ? createUserWithEmailAndPassword : signInWithEmailAndPassword;
-    await f(auth, $("em").value.trim(), $("pw").value);
+    const c = await f(auth, $("em").value.trim(), $("pw").value);
+    if (signup) await sendEmailVerification(c.user).catch(() => {});
   } catch (e) { say(ERR[e.code] || "Qualcosa non ha funzionato. Riprova."); }
   $("go").disabled = false;
 };
@@ -162,16 +165,39 @@ onAuthStateChanged(auth, async u => {
   $("auth").classList.toggle("hide", !!u);
   $("app").classList.toggle("hide", !u);
   if (!u) return;
-  entitled = (await getDoc(doc(db, "entitlements", u.uid)).catch(() => null))?.exists() || false;
-  if (entitled) done = (await getDoc(doc(db, "progress", u.uid)).catch(() => null))?.data()?.done || {};
-  route();
+  if (!u.emailVerified) return verify();
+  await load();
 });
+
+// L'accesso è legato all'email verificata dell'acquirente (id del documento = email in minuscolo)
+async function load() {
+  const es = await getDoc(doc(db, "entitlements", user.email.toLowerCase())).catch(() => null);
+  entitled = !!(es && es.exists()); hasFS = entitled && es.data().fastStart === true;
+  if (hasFS) done = (await getDoc(doc(db, "progress", user.uid)).catch(() => null))?.data()?.done || {};
+  route();
+}
+
+function verify() {
+  $("view").innerHTML = `<div class="lock"><h2>Conferma la tua email</h2>
+  <p>Ti abbiamo inviato un'email a ${user.email}. Apri il link che contiene, poi premi il pulsante qui sotto. Controlla anche la cartella spam.</p>
+  <button class="btn" id="vr">Ho confermato, continua</button><br>
+  <button class="btn ghost" id="vs" style="color:var(--navy);margin-top:12px">Invia di nuovo l'email</button><p id="vm" style="margin-top:14px"></p></div>`;
+  $("vr").onclick = async () => {
+    await user.reload(); await user.getIdToken(true);
+    if (auth.currentUser.emailVerified) { user = auth.currentUser; await load(); }
+    else $("vm").textContent = "L'email non risulta ancora confermata.";
+  };
+  $("vs").onclick = async () => {
+    try { await sendEmailVerification(user); $("vm").textContent = "Email inviata di nuovo."; }
+    catch (e) { $("vm").textContent = "Attendi qualche minuto prima di richiederla ancora."; }
+  };
+}
 addEventListener("hashchange", () => user && route());
 
 function route() {
   const k = location.hash.startsWith("#/l/") ? location.hash.slice(4) : null;
   if (!entitled) return locked();
-  k && LESSONS.some(l => l[0] === k) ? lesson(k) : home();
+  k && hasFS && LESSONS.some(l => l[0] === k) ? lesson(k) : home();
 }
 
 function locked() {
@@ -180,12 +206,22 @@ function locked() {
   <a class="btn" href="${BUY_URL}" style="display:inline-block;text-decoration:none">Scopri Fast Start</a></div>`;
 }
 
+const guideCard = `<div class="gc"><div><b>La tua guida</b><p>Affitti brevi da zero · PDF di 12 pagine con checklist stampabile</p></div>
+  <a class="btn" href="../assets/guida-affitti-brevi.pdf" download>Scarica il PDF</a></div>`;
+
 function home() {
+  if (!hasFS) {
+    $("view").innerHTML = `<h2 class="lh" style="margin-top:0">Benvenuto</h2>${guideCard}
+    <div class="lock" style="margin:36px 0;text-align:left;max-width:none"><h2>Vuoi andare oltre la guida?</h2>
+    <p>Fast Start è il primo passo del percorso Da 0 a Property Manager: 7 lezioni pratiche e un video bonus, con accesso a vita.</p>
+    <a class="btn" href="${BUY_URL}" style="display:inline-block;text-decoration:none">Scopri Fast Start</a></div>`;
+    return;
+  }
   const main = LESSONS.slice(0, -1), n = main.filter(l => done[l[0]]).length, pct = Math.round(n / main.length * 100);
   const next = main.find(l => !done[l[0]]);
   const row = (l, i, b) => `<button class="row ${done[l[0]] ? "done" : ""}" onclick="location.hash='#/l/${l[0]}'">
     <span class="n">${b ? "★" : done[l[0]] ? "✓" : i + 1}</span><span class="t">${l[1]}</span></button>`;
-  $("view").innerHTML = `<div class="hero"><div class="ring">
+  $("view").innerHTML = `${guideCard}<div class="hero" style="margin-top:30px"><div class="ring">
     <svg viewBox="0 0 100 100"><polygon points="50,4 90,27 90,73 50,96 10,73 10,27" fill="none" stroke="#E6E0CF" stroke-width="4"/>
     <polygon points="50,4 90,27 90,73 50,96 10,73 10,27" fill="none" stroke="#FFD537" stroke-width="4" stroke-linejoin="round" pathLength="100" stroke-dasharray="${pct} 100"/></svg>
     <span>${pct}%</span></div>

@@ -1,23 +1,28 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function entitled() {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/entitlements/$(request.auth.uid));
+    function verified() {
+      return request.auth != null && request.auth.token.email_verified == true;
     }
-    // Chi ha acquistato: scritto solo dal server (webhook) o a mano dalla console
-    match /entitlements/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
+    function entDoc() {
+      return /databases/$(database)/documents/entitlements/$(request.auth.token.email.lower());
+    }
+    function fastStart() {
+      return verified() && exists(entDoc()) && get(entDoc()).data.fastStart == true;
+    }
+    // Acquirenti: id documento = email in minuscolo. Campi: guide (true), fastStart (true)
+    match /entitlements/{email} {
+      allow read: if verified() && request.auth.token.email.lower() == email;
       allow write: if false;
     }
-    // Indirizzi dei video: visibili solo a chi ha accesso
+    // Video delle lezioni: solo chi ha Fast Start
     match /videos/{key} {
-      allow read: if entitled();
+      allow read: if fastStart();
       allow write: if false;
     }
     // Avanzamento personale
     match /progress/{uid} {
-      allow read, write: if entitled() && request.auth.uid == uid;
+      allow read, write: if fastStart() && request.auth.uid == uid;
     }
   }
 }

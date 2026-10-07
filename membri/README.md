@@ -24,8 +24,8 @@ e in Bunny limita gli embed al tuo dominio. Il sito non va toccato.
 
 ## 3. Dare accesso a un acquirente (per ora a mano)
 1. L'acquirente crea il suo accesso dalla pagina («Prima volta qui?»).
-2. Authentication → Utenti → copia il suo **UID**.
-3. Firestore → collezione `entitlements` → documento con ID = UID → campo `fastStart` = true.
+2. L'acquirente deve confermare l'email (arriva un messaggio automatico).
+3. Firestore → collezione `entitlements` → documento con ID = email dell'acquirente IN MINUSCOLO → campo `guide` = true (chi ha comprato la guida) e/o `fastStart` = true (chi ha comprato Fast Start).
 Accesso a vita finché non elimini quel documento. Nella fase 2 lo farà in automatico il webhook di Stripe.
 
 ## 4. GitHub Pages

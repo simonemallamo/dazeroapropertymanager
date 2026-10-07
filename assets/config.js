@@ -2,7 +2,9 @@
 window.CFG = {
   guideLink: "https://buy.stripe.com/INCOLLA_LINK_GUIDA",      // Stripe Payment Link della guida
   fastStartLink: "https://buy.stripe.com/INCOLLA_LINK_FASTSTART", // Stripe Payment Link di Fast Start
-  price: "2,90",            // prezzo guida (solo testo mostrato)
+  fullPrice: "9,90",        // prezzo pieno della guida (solo testo mostrato, barrato)
+  price: "2",               // prezzo scontato col codice (solo testo mostrato)
+  promoCode: "INCOLLA_CODICE", // codice promozionale Stripe: viene applicato in automatico
   fsPrice: "29,90",         // prezzo Fast Start (solo testo mostrato)
   youtubeId: "INCOLLA_ID_VIDEO",   // video di presentazione (YouTube non in elenco)
   fullProgramUrl: "mailto:email@tuodominio.com",  // contatto per il percorso completo
@@ -10,7 +12,9 @@ window.CFG = {
 };
 document.addEventListener("DOMContentLoaded", () => {
   const C = window.CFG, q = s => document.querySelectorAll(s);
-  q("[data-buy]").forEach(a => a.href = C.guideLink);
+  q("[data-buy]").forEach(a => a.href = C.guideLink + (C.promoCode && !C.promoCode.startsWith("INCOLLA") ? (C.guideLink.includes("?") ? "&" : "?") + "prefilled_promo_code=" + encodeURIComponent(C.promoCode) : ""));
+  q("[data-full-price]").forEach(e => e.textContent = C.fullPrice);
+  q("[data-code]").forEach(e => e.textContent = C.promoCode);
   q("[data-fs]").forEach(a => a.href = C.fastStartLink);
   q("[data-full]").forEach(a => a.href = C.fullProgramUrl);
   q("[data-price]").forEach(e => e.textContent = C.price);

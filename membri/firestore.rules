@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function entitled() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/entitlements/$(request.auth.uid));
+    }
+    // Chi ha acquistato: scritto solo dal server (webhook) o a mano dalla console
+    match /entitlements/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+    // Indirizzi dei video: visibili solo a chi ha accesso
+    match /videos/{key} {
+      allow read: if entitled();
+      allow write: if false;
+    }
+    // Avanzamento personale
+    match /progress/{uid} {
+      allow read, write: if entitled() && request.auth.uid == uid;
+    }
+  }
+}

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Fast Start · Area membri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0B1F3A;--navy2:#15335F;--gold:#FFD537;--golds:#B8900F;--ivory:#FAF8F2;--ink:#1E2B40;--mut:#5E6A7D;--line:#E6E0CF}
+*{box-sizing:border-box;margin:0}
+body{font:400 15px/1.6 Poppins,system-ui,sans-serif;color:var(--ink);background:var(--ivory);min-height:100vh}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--golds);outline-offset:2px}
+.btn{background:var(--gold);color:var(--navy);border:0;border-radius:999px;padding:11px 24px;font-weight:600}
+.btn.ghost{background:transparent;color:inherit;border:1px solid currentColor;font-weight:500}
+.btn:disabled{opacity:.5}
+.hide{display:none!important}
+/* accesso */
+#auth{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(150deg,var(--navy),var(--navy2));color:#fff}
+.box{width:100%;max-width:380px;text-align:center}
+.box img{width:190px;margin-bottom:28px}
+.box h1{font-weight:300;font-size:26px;margin-bottom:6px}
+.box p.s{color:#C9D3E3;font-size:14px;margin-bottom:22px}
+input{width:100%;padding:12px 16px;margin-bottom:10px;border-radius:10px;border:1px solid #2A4572;background:#102B52;color:#fff;font:inherit}
+input::placeholder{color:#8EA0BC}
+.box .btn{width:100%;margin-top:6px}
+.lnk{background:none;border:0;color:var(--gold);font-size:13px;margin-top:14px;text-decoration:underline}
+#msg{min-height:22px;font-size:13px;color:#FFB4A8;margin-top:12px}
+#msg.ok{color:#9BE3B0}
+/* app */
+header{background:var(--navy);color:#fff;padding:12px 24px;display:flex;align-items:center;gap:14px}
+header img{height:40px}
+header b{font-weight:500;flex:1}
+header .btn{padding:7px 16px;font-size:13px}
+main{max-width:880px;margin:0 auto;padding:32px 20px 64px}
+.hero{display:flex;gap:28px;align-items:center;margin-bottom:34px}
+.ring{position:relative;width:132px;flex:none}
+.ring svg{display:block}
+.ring span{position:absolute;inset:0;display:grid;place-items:center;font:300 30px Poppins;color:var(--navy)}
+.hero h2{font-weight:300;font-size:28px;line-height:1.25;color:var(--navy);margin-bottom:6px}
+.hero p{color:var(--mut);margin-bottom:14px}
+.list{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:16px;width:100%;padding:16px 4px;background:none;border:0;border-bottom:1px solid var(--line);text-align:left;color:var(--ink)}
+.row:hover{background:#fff}
+.n{flex:none;width:34px;height:34px;display:grid;place-items:center;font-weight:500;color:var(--gold);background:var(--navy);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.row.done .n{background:var(--gold);color:var(--navy)}
+.row .t{flex:1;font-weight:500}
+.row small{color:var(--mut)}
+.bonus{margin-top:22px;border-top:2px solid var(--gold)}
+.bonus .n{font-size:12px}
+.crumb{background:none;border:0;color:var(--mut);padding:0;margin-bottom:18px}
+.vid{aspect-ratio:16/9;background:var(--navy);border-radius:12px;overflow:hidden;display:grid;place-items:center;color:#C9D3E3;text-align:center;padding:20px}
+.vid iframe{width:100%;height:100%;border:0}
+.lh{margin:22px 0 8px;font-weight:400;font-size:24px;line-height:1.3;color:var(--navy)}
+.desc{color:var(--mut);max-width:62ch;margin-bottom:22px;white-space:pre-line}
+.nav{display:flex;gap:10px;flex-wrap:wrap}
+.lock{max-width:520px;margin:60px auto;text-align:center}
+.lock h2{font-weight:300;font-size:26px;color:var(--navy);margin-bottom:10px}
+.lock p{color:var(--mut);margin-bottom:20px}
+@media(max-width:560px){.hero{flex-direction:column;align-items:flex-start}.ring{width:104px}.ring span{font-size:24px}}
+@media(prefers-reduced-motion:no-preference){.row{transition:background .15s}}
+</style>
+</head>
+<body>
+
+<section id="auth" class="hide">
+  <div class="box">
+    <img src="assets/logo_full.png" alt="Simone Mallamo">
+    <h1 id="at">Accedi a Fast Start</h1>
+    <p class="s" id="as">Usa l'email con cui hai acquistato il percorso.</p>
+    <input id="em" type="email" placeholder="Email" autocomplete="email">
+    <input id="pw" type="password" placeholder="Password" autocomplete="current-password">
+    <button class="btn" id="go">Accedi</button>
+    <button class="lnk" id="sw">Prima volta qui? Crea il tuo accesso</button><br>
+    <button class="lnk" id="rs">Password dimenticata</button>
+    <div id="msg" role="status"></div>
+  </div>
+</section>
+
+<div id="app" class="hide">
+  <header>
+    <img src="assets/logo_mark.png" alt="">
+    <b>Fast Start</b>
+    <button class="btn ghost" id="out">Esci</button>
+  </header>
+  <main id="view"></main>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+/* ====== DA COMPILARE ====== */
+const firebaseConfig = {
+  apiKey: "INCOLLA_QUI", authDomain: "INCOLLA_QUI", projectId: "INCOLLA_QUI",
+  storageBucket: "INCOLLA_QUI", messagingSenderId: "INCOLLA_QUI", appId: "INCOLLA_QUI"
+};
+const BUY_URL = "https://";            // pagina di acquisto di Fast Start
+const SUPPORT = "email@tuodominio.com"; // email di assistenza
+/* ========================== */
+
+// Lezioni: titoli qui, indirizzi dei video su Firestore (collezione "videos", id = chiave)
+const LESSONS = [
+  ["intro", "Introduzione al percorso"],
+  ["vantaggi", "Affitti brevi, vantaggi per i proprietari e strategie di gestione"],
+  ["ota", "Come funzionano le O.T.A."],
+  ["zona", "Come individuare la zona operativa"],
+  ["immobile", "Acquisire il tuo primo immobile"],
+  ["annuncio", "La struttura di un annuncio vincente"],
+  ["regola10", "La regola dei 10 giorni"],
+  ["bonus", "Video bonus: come raggiungere la stabilità finanziaria"]
+];
+
+const app = initializeApp(firebaseConfig), auth = getAuth(app), db = getFirestore(app);
+const $ = id => document.getElementById(id);
+let user, entitled = false, done = {}, signup = false;
+
+// Sorgente video: YouTube ora, Bunny dopo (basta cambiare il documento su Firestore)
+function embed(v) {
+  if (v.provider === "bunny") return `https://iframe.mediadelivery.net/embed/${v.library}/${v.id}?preload=true`;
+  return `https://www.youtube-nocookie.com/embed/${v.id}?rel=0&modestbranding=1`;
+}
+
+const ERR = {
+  "auth/invalid-credential": "Email o password non corretti.",
+  "auth/email-already-in-use": "Esiste già un accesso con questa email. Usa «Accedi».",
+  "auth/weak-password": "La password deve avere almeno 6 caratteri.",
+  "auth/invalid-email": "Controlla l'indirizzo email.",
+  "auth/too-many-requests": "Troppi tentativi. Riprova tra qualche minuto."
+};
+const say = (t, ok) => { $("msg").textContent = t; $("msg").className = ok ? "ok" : ""; };
+
+function mode(s) {
+  signup = s;
+  $("at").textContent = s ? "Crea il tuo accesso" : "Accedi a Fast Start";
+  $("go").textContent = s ? "Crea accesso" : "Accedi";
+  $("sw").textContent = s ? "Hai già un accesso? Accedi" : "Prima volta qui? Crea il tuo accesso";
+  $("pw").autocomplete = s ? "new-password" : "current-password";
+  say("");
+}
+$("sw").onclick = () => mode(!signup);
+$("go").onclick = async () => {
+  $("go").disabled = true; say("");
+  try {
+    const f = signup ? createUserWithEmailAndPassword : signInWithEmailAndPassword;
+    await f(auth, $("em").value.trim(), $("pw").value);
+  } catch (e) { say(ERR[e.code] || "Qualcosa non ha funzionato. Riprova."); }
+  $("go").disabled = false;
+};
+$("rs").onclick = async () => {
+  if (!$("em").value) return say("Scrivi la tua email, poi tocca di nuovo «Password dimenticata».");
+  try { await sendPasswordResetEmail(auth, $("em").value.trim()); say("Ti abbiamo inviato un'email per scegliere una nuova password.", true); }
+  catch (e) { say(ERR[e.code] || "Non siamo riusciti a inviare l'email."); }
+};
+$("out").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, async u => {
+  user = u;
+  $("auth").classList.toggle("hide", !!u);
+  $("app").classList.toggle("hide", !u);
+  if (!u) return;
+  entitled = (await getDoc(doc(db, "entitlements", u.uid)).catch(() => null))?.exists() || false;
+  if (entitled) done = (await getDoc(doc(db, "progress", u.uid)).catch(() => null))?.data()?.done || {};
+  route();
+});
+addEventListener("hashchange", () => user && route());
+
+function route() {
+  const k = location.hash.startsWith("#/l/") ? location.hash.slice(4) : null;
+  if (!entitled) return locked();
+  k && LESSONS.some(l => l[0] === k) ? lesson(k) : home();
+}
+
+function locked() {
+  $("view").innerHTML = `<div class="lock"><h2>Non hai ancora accesso a Fast Start</h2>
+  <p>Questo accesso non risulta collegato a un acquisto. Se hai appena acquistato, attendi un minuto e ricarica la pagina. Se il problema continua, scrivi a ${SUPPORT}.</p>
+  <a class="btn" href="${BUY_URL}" style="display:inline-block;text-decoration:none">Scopri Fast Start</a></div>`;
+}
+
+function home() {
+  const main = LESSONS.slice(0, -1), n = main.filter(l => done[l[0]]).length, pct = Math.round(n / main.length * 100);
+  const next = main.find(l => !done[l[0]]);
+  const row = (l, i, b) => `<button class="row ${done[l[0]] ? "done" : ""}" onclick="location.hash='#/l/${l[0]}'">
+    <span class="n">${b ? "★" : done[l[0]] ? "✓" : i + 1}</span><span class="t">${l[1]}</span></button>`;
+  $("view").innerHTML = `<div class="hero"><div class="ring">
+    <svg viewBox="0 0 100 100"><polygon points="50,4 90,27 90,73 50,96 10,73 10,27" fill="none" stroke="#E6E0CF" stroke-width="4"/>
+    <polygon points="50,4 90,27 90,73 50,96 10,73 10,27" fill="none" stroke="#FFD537" stroke-width="4" stroke-linejoin="round" pathLength="100" stroke-dasharray="${pct} 100"/></svg>
+    <span>${pct}%</span></div>
+    <div><h2>${n === main.length ? "Hai completato Fast Start" : n ? "Bentornato, continua da qui" : "Benvenuto in Fast Start"}</h2>
+    <p>${n} lezioni completate su ${main.length}</p>
+    ${next ? `<button class="btn" onclick="location.hash='#/l/${next[0]}'">${n ? "Continua con la lezione " + (main.indexOf(next) + 1) : "Inizia la prima lezione"}</button>` : ""}</div></div>
+    <div class="list">${main.map((l, i) => row(l, i)).join("")}</div>
+    <div class="list bonus">${row(LESSONS.at(-1), 0, true)}</div>`;
+}
+
+async function lesson(k) {
+  const i = LESSONS.findIndex(l => l[0] === k), l = LESSONS[i], isB = k === "bonus";
+  $("view").innerHTML = `<button class="crumb" onclick="location.hash=''">← Tutte le lezioni</button>
+    <div class="vid" id="vd">Caricamento…</div><h2 class="lh">${isB ? "" : `Lezione ${i}: `}${l[1]}</h2><p class="desc" id="ds"></p>
+    <div class="nav"><button class="btn" id="mk"></button>
+    ${i > 0 ? `<button class="btn ghost" style="color:var(--navy)" onclick="location.hash='#/l/${LESSONS[i - 1][0]}'">Precedente</button>` : ""}
+    ${i < LESSONS.length - 1 ? `<button class="btn ghost" style="color:var(--navy)" onclick="location.hash='#/l/${LESSONS[i + 1][0]}'">Successiva</button>` : ""}</div>`;
+  const mk = $("mk"), paint = () => mk.textContent = done[k] ? "✓ Completata" : "Segna come completata";
+  paint();
+  mk.onclick = async () => {
+    done[k] = !done[k]; if (!done[k]) delete done[k]; paint();
+    await setDoc(doc(db, "progress", user.uid), { done }).catch(() => {});
+  };
+  const s = await getDoc(doc(db, "videos", k)).catch(() => null);
+  if (s && s.exists()) {
+    const v = s.data();
+    $("vd").innerHTML = `<iframe src="${embed(v)}" title="${l[1]}" allow="accelerometer;autoplay;encrypted-media;picture-in-picture;fullscreen" allowfullscreen></iframe>`;
+    $("ds").textContent = v.description || "";
+  } else $("vd").textContent = "Questo video sarà disponibile a breve.";
+}
+</script>
+</body>
+</html>

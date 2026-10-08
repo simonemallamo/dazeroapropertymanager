@@ -224,7 +224,16 @@ function locked() {
 }
 
 const guideCard = `<div class="gc"><div><b>La tua guida</b><p>Affitti brevi da zero · PDF di 12 pagine con checklist stampabile</p></div>
-  <a class="btn" href="../assets/guida-affitti-brevi.pdf" download>Scarica il PDF</a></div>`;
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" onclick="toggleGuide()">Leggi online</button>
+  <a class="btn ghost" href="../assets/guida-affitti-brevi.pdf" download>Scarica il PDF</a></div></div><div id="gv" class="hide"></div>`;
+
+window.toggleGuide = () => {
+  const g = $("gv");
+  if (!g.classList.contains("hide")) { g.classList.add("hide"); g.innerHTML = ""; return; }
+  g.innerHTML = `<iframe src="../assets/guida-affitti-brevi.pdf#view=FitH" title="La tua guida" style="width:100%;height:78vh;border:1px solid var(--line);border-radius:10px;margin-top:14px;background:#fff"></iframe>
+  <p style="font-size:13px;color:var(--mut);margin-top:8px">Se la guida non si apre qui (succede su alcuni telefoni), <a href="../assets/guida-affitti-brevi.pdf" target="_blank" rel="noopener" style="color:var(--navy)">aprila a schermo intero</a>.</p>`;
+  g.classList.remove("hide");
+};
 
 function home() {
   if (!hasFS) {
@@ -238,8 +247,8 @@ function home() {
     <a class="btn" href="${BUY_URL}">Voglio iniziare Fast Start</a></div></div>`;
     getDoc(doc(db, "videos", "presentazione")).then(s => {
       if (s.exists()) $("vd").innerHTML = `<iframe src="${embed(s.data())}" title="Presentazione di Fast Start" allow="encrypted-media;picture-in-picture;fullscreen" allowfullscreen></iframe>`;
-      else $("vd").remove();
-    }).catch(() => $("vd") && $("vd").remove());
+      else $("vd").textContent = "Il video di presentazione sarà disponibile a breve.";
+    }).catch(() => { if ($("vd")) $("vd").textContent = "Il video di presentazione sarà disponibile a breve."; });
     return;
   }
   const main = LESSONS.slice(0, -1), n = main.filter(l => done[l[0]]).length, pct = Math.round(n / main.length * 100);

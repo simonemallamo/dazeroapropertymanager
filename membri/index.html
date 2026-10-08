@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Fast Start · Area membri</title>
+<title>Area personale · Simone Mallamo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -63,6 +63,11 @@ main{max-width:880px;margin:0 auto;padding:32px 20px 64px}
 @media(prefers-reduced-motion:no-preference){.row{transition:background .15s}}
 .gc{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--navy);color:#fff;border-radius:12px;padding:20px 24px}
 .gc b{font-weight:500;font-size:17px}.gc p{color:#C9D3E3;font-size:14px}.gc .btn{text-decoration:none}
+.offer{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;background:linear-gradient(150deg,var(--navy),var(--navy2));color:#fff;border-radius:14px;padding:30px;margin-top:22px}
+.offer h3{font-weight:400;font-size:22px;line-height:1.3;margin-bottom:12px}.offer ol{padding-left:20px;color:#C9D3E3;font-size:14px}
+.offer .old{text-decoration:line-through;color:#C9D3E3;font-size:18px}.offer .new{font-size:44px;font-weight:300;color:var(--gold);line-height:1}
+.offer small{display:block;color:#C9D3E3;margin:8px 0 16px}.offer .btn{display:inline-block;text-decoration:none}
+@media(max-width:700px){.offer{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -70,8 +75,8 @@ main{max-width:880px;margin:0 auto;padding:32px 20px 64px}
 <section id="auth" class="hide">
   <div class="box">
     <img src="assets/logo_full.png" alt="Simone Mallamo">
-    <h1 id="at">Accedi a Fast Start</h1>
-    <p class="s" id="as">Usa l'email con cui hai acquistato il percorso.</p>
+    <h1 id="at">Accedi alla tua area personale</h1>
+    <p class="s" id="as">Usa la stessa email con cui hai effettuato l'acquisto.</p>
     <input id="em" type="email" placeholder="Email" autocomplete="email">
     <input id="pw" type="password" placeholder="Password" autocomplete="current-password">
     <button class="btn" id="go">Accedi</button>
@@ -84,7 +89,7 @@ main{max-width:880px;margin:0 auto;padding:32px 20px 64px}
 <div id="app" class="hide">
   <header>
     <img src="assets/logo_mark.png" alt="">
-    <b>Fast Start</b>
+    <b>Area personale</b>
     <button class="btn ghost" id="out">Esci</button>
   </header>
   <main id="view"></main>
@@ -105,6 +110,7 @@ const firebaseConfig = {
   appId: "1:956452601771:web:2d26f15e16725807d95cee"
 };
 const BUY_URL = "https://buy.stripe.com/28EbJ1dJO50wbDT0Q3fIs02?prefilled_promo_code=ZERO60"; // link Fast Start
+const FS = { full: "69", price: "24,90", code: "ZERO60" }; // prezzi mostrati nell'invito a Fast Start
 const SUPPORT = "mallamo.simone@gmail.com"; // email di assistenza
 /* ========================== */
 
@@ -141,7 +147,7 @@ const say = (t, ok) => { $("msg").textContent = t; $("msg").className = ok ? "ok
 
 function mode(s) {
   signup = s;
-  $("at").textContent = s ? "Crea il tuo accesso" : "Accedi a Fast Start";
+  $("at").textContent = s ? "Crea il tuo accesso" : "Accedi alla tua area personale";
   $("go").textContent = s ? "Crea accesso" : "Accedi";
   $("sw").textContent = s ? "Hai già un accesso? Accedi" : "Prima volta qui? Crea il tuo accesso";
   $("pw").autocomplete = s ? "new-password" : "current-password";
@@ -216,9 +222,17 @@ const guideCard = `<div class="gc"><div><b>La tua guida</b><p>Affitti brevi da z
 function home() {
   if (!hasFS) {
     $("view").innerHTML = `<h2 class="lh" style="margin-top:0">Benvenuto</h2>${guideCard}
-    <div class="lock" style="margin:36px 0;text-align:left;max-width:none"><h2>Vuoi andare oltre la guida?</h2>
-    <p>Fast Start è il primo passo del percorso Da 0 a Property Manager: 7 lezioni pratiche e un video bonus, con accesso a vita.</p>
-    <a class="btn" href="${BUY_URL}" style="display:inline-block;text-decoration:none">Scopri Fast Start</a></div>`;
+    <h2 class="lh" style="margin-top:38px">Il prossimo passo: Fast Start</h2>
+    <div class="vid" id="vd">Caricamento…</div>
+    <div class="offer"><div><h3>Fast Start · il primo passo del percorso Da 0 a Property Manager</h3>
+    <ol>${LESSONS.map(l => `<li>${l[1]}</li>`).join("")}</ol></div>
+    <div><div class="old">${FS.full}€</div><div class="new">${FS.price}€</div>
+    <small>Pagamento unico · accesso a vita<br>Sconto già applicato con il codice ${FS.code}</small>
+    <a class="btn" href="${BUY_URL}">Voglio iniziare Fast Start</a></div></div>`;
+    getDoc(doc(db, "videos", "presentazione")).then(s => {
+      if (s.exists()) $("vd").innerHTML = `<iframe src="${embed(s.data())}" title="Presentazione di Fast Start" allow="encrypted-media;picture-in-picture;fullscreen" allowfullscreen></iframe>`;
+      else $("vd").remove();
+    }).catch(() => $("vd") && $("vd").remove());
     return;
   }
   const main = LESSONS.slice(0, -1), n = main.filter(l => done[l[0]]).length, pct = Math.round(n / main.length * 100);

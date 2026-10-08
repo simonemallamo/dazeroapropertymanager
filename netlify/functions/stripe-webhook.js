@@ -22,17 +22,28 @@ exports.handler = async (event) => {
 
   const s = ev.data.object;
   if (!["paid", "no_payment_required"].includes(s.payment_status)) return { statusCode: 200, body: "in attesa" };
-  const email = (s.customer_details?.email || s.customer_email || "").toLowerCase().trim();
-  if (!email) return { statusCode: 200, body: "nessuna email" };
+  // Email usata al pagamento + (se l'acquisto parte dall'area personale) email dell'account collegato
+  const emails = new Set();
+  const payEmail = (s.customer_details?.email || s.customer_email || "").toLowerCase().trim();
+  if (payEmail) emails.add(payEmail);
+  if (s.client_reference_id) {
+    try {
+      const u = await admin.auth().getUser(s.client_reference_id);
+      if (u.email) emails.add(u.email.toLowerCase());
+    } catch (e) { /* utente non trovato: si usa solo l'email del pagamento */ }
+  }
+  if (!emails.size) return { statusCode: 200, body: "nessuna email" };
 
   // Se il nome del prodotto contiene "Fast Start" -> accesso alle lezioni, altrimenti -> guida
   const items = await stripe.checkout.sessions.listLineItems(s.id, { expand: ["data.price.product"] });
   const kw = (process.env.FASTSTART_KEYWORD || "fast start").toLowerCase();
   const isFS = items.data.some((i) => ((i.price && i.price.product && i.price.product.name) || i.description || "").toLowerCase().includes(kw));
 
-  await db.collection("entitlements").doc(email).set(
-    { ...(isFS ? { fastStart: true } : { guide: true }), updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastSession: s.id },
-    { merge: true }
-  );
+  for (const em of emails) {
+    await db.collection("entitlements").doc(em).set(
+      { ...(isFS ? { fastStart: true } : { guide: true }), updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastSession: s.id },
+      { merge: true }
+    );
+  }
   return { statusCode: 200, body: "ok" };
 };

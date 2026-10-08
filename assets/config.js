@@ -8,9 +8,8 @@ window.CFG = {
   fastStartCode: "ZERO60",                                           // codice promo Fast Start (applicato in automatico)
   fsFullPrice: "69",        // prezzo pieno Fast Start (barrato)
   fsPrice: "24,90",         // prezzo Fast Start col codice (69€ - 44,10€)
-  youtubeId: "INCOLLA_ID_VIDEO",                 // video di presentazione (YouTube non in elenco)
-  fullProgramUrl: "mailto:email@tuodominio.com", // contatto per il percorso completo
-  support: "email@tuodominio.com"
+  fullProgramUrl: "mailto:mallamo.simone@gmail.com", // contatto per il percorso completo
+  support: "mallamo.simone@gmail.com"
 };
 document.addEventListener("DOMContentLoaded", () => {
   const C = window.CFG, q = s => document.querySelectorAll(s);

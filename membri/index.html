@@ -185,11 +185,21 @@ onAuthStateChanged(auth, async u => {
 });
 
 // L'accesso è legato all'email verificata dell'acquirente (id del documento = email in minuscolo)
-async function load() {
+async function fetchEnt() {
   let es = null; loadErr = null;
   try { es = await getDoc(doc(db, "entitlements", user.email.toLowerCase())); } catch (e) { loadErr = e.code || String(e); }
   entitled = !!(es && es.exists()); hasFS = entitled && es.data().fastStart === true;
   if (hasFS) done = (await getDoc(doc(db, "progress", user.uid)).catch(() => null))?.data()?.done || {};
+}
+
+async function load() {
+  await fetchEnt();
+  // Appena tornato dal pagamento di Fast Start: il webhook può impiegare qualche secondo
+  if (!hasFS && new URLSearchParams(location.search).get("acquisto") === "faststart") {
+    $("view").innerHTML = `<div class="lock"><h2>Stiamo attivando il tuo accesso a Fast Start…</h2><p>Ci vogliono pochi secondi. Non chiudere la pagina.</p></div>`;
+    for (let i = 0; i < 12 && !hasFS; i++) { await new Promise(r => setTimeout(r, 5000)); await fetchEnt(); }
+    history.replaceState(null, "", location.pathname);
+  }
   route();
 }
 
@@ -252,7 +262,9 @@ function home() {
     <ol>${LESSONS.map(l => `<li>${l[1]}</li>`).join("")}</ol></div>
     <div><div class="old">${FS.full}€</div><div class="new">${FS.price}€</div>
     <small>Pagamento unico · accesso a vita<br>Sconto già applicato con il codice ${FS.code}</small>
-    <a class="btn" href="${BUY_URL}">Voglio iniziare Fast Start</a></div></div>`;
+    <a class="btn" href="${BUY_URL}">Voglio iniziare Fast Start</a>
+    <p style="margin-top:14px"><button class="lnk" id="rf" style="margin:0">Hai già acquistato? Aggiorna il tuo accesso</button></p></div></div>`;
+    $("rf").onclick = async () => { $("rf").textContent = "Controllo…"; await fetchEnt(); route(); };
     getDoc(doc(db, "videos", "presentazione")).then(s => {
       if (s.exists()) $("vd").innerHTML = `<iframe src="${embed(s.data())}" title="Presentazione di Fast Start" allow="encrypted-media;picture-in-picture;fullscreen" allowfullscreen></iframe>`;
       else $("vd").textContent = "Il video di presentazione sarà disponibile a breve.";

@@ -115,6 +115,7 @@ const firebaseConfig = {
 };
 const BUY_URL = "https://buy.stripe.com/28EbJ1dJO50wbDT0Q3fIs02?prefilled_promo_code=ZERO60"; // link Fast Start
 const FS = { full: "69", price: "24,90", code: "ZERO60" }; // prezzi mostrati nell'invito a Fast Start
+const buyUrl = () => BUY_URL + (BUY_URL.includes("?") ? "&" : "?") + "client_reference_id=" + encodeURIComponent(user.uid) + "&prefilled_email=" + encodeURIComponent(user.email); // collega l'acquisto all'account e precompila l'email
 const SUPPORT = "mallamo.simone@gmail.com"; // email di assistenza
 /* ========================== */
 
@@ -188,7 +189,7 @@ onAuthStateChanged(auth, async u => {
 async function fetchEnt() {
   let es = null; loadErr = null;
   try { es = await getDoc(doc(db, "entitlements", user.email.toLowerCase())); } catch (e) { loadErr = e.code || String(e); }
-  entitled = !!(es && es.exists()); hasFS = entitled && es.data().fastStart === true;
+  entitled = !!(es && es.exists()); hasFS = entitled && [true, "true"].includes(es.data().fastStart);
   if (hasFS) done = (await getDoc(doc(db, "progress", user.uid)).catch(() => null))?.data()?.done || {};
 }
 
@@ -196,9 +197,18 @@ async function load() {
   await fetchEnt();
   // Appena tornato dal pagamento di Fast Start: il webhook può impiegare qualche secondo
   if (!hasFS && new URLSearchParams(location.search).get("acquisto") === "faststart") {
-    $("view").innerHTML = `<div class="lock"><h2>Stiamo attivando il tuo accesso a Fast Start…</h2><p>Ci vogliono pochi secondi. Non chiudere la pagina.</p></div>`;
+    $("view").innerHTML = `<div class="lock"><h2>Stiamo attivando il tuo accesso a Fast Start…</h2>
+    <p>Stiamo cercando l'acquisto collegato a <b>${user.email}</b>. Ci vogliono pochi secondi, non chiudere la pagina.</p></div>`;
     for (let i = 0; i < 12 && !hasFS; i++) { await new Promise(r => setTimeout(r, 5000)); await fetchEnt(); }
     history.replaceState(null, "", location.pathname);
+    if (!hasFS) {
+      $("view").innerHTML = `<div class="lock"><h2>Non troviamo ancora l'acquisto di Fast Start</h2>
+      <p>Abbiamo controllato l'email <b>${user.email}</b>. Se al pagamento hai usato un indirizzo diverso, scrivi a ${SUPPORT} indicando quale. Altrimenti riprova tra qualche istante.</p>
+      <button class="btn" id="rt">Riprova</button> <button class="btn ghost" id="rg" style="color:var(--navy)">Vai alla mia guida</button></div>`;
+      $("rt").onclick = async () => { await fetchEnt(); route(); };
+      $("rg").onclick = () => route();
+      return;
+    }
   }
   route();
 }
@@ -234,7 +244,7 @@ function locked() {
   }
   $("view").innerHTML = `<div class="lock"><h2>Non hai ancora accesso a Fast Start</h2>
   <p>Questo accesso non risulta collegato a un acquisto. Controlla di aver usato la stessa email dell'acquisto. Se hai appena acquistato, attendi un minuto e ricarica la pagina. Se il problema continua, scrivi a ${SUPPORT}.</p>
-  <a class="btn" href="${BUY_URL}" style="display:inline-block;text-decoration:none">Scopri Fast Start</a></div>`;
+  <a class="btn" href="${buyUrl()}" style="display:inline-block;text-decoration:none">Scopri Fast Start</a></div>`;
 }
 
 const guideCard = `<div class="gc"><div><b>La tua guida</b><p>Affitti brevi da zero · PDF di 12 pagine con checklist stampabile</p></div>
@@ -262,7 +272,7 @@ function home() {
     <ol>${LESSONS.map(l => `<li>${l[1]}</li>`).join("")}</ol></div>
     <div><div class="old">${FS.full}€</div><div class="new">${FS.price}€</div>
     <small>Pagamento unico · accesso a vita<br>Sconto già applicato con il codice ${FS.code}</small>
-    <a class="btn" href="${BUY_URL}">Voglio iniziare Fast Start</a>
+    <a class="btn" href="${buyUrl()}">Voglio iniziare Fast Start</a>
     <p style="margin-top:14px"><button class="lnk" id="rf" style="margin:0">Hai già acquistato? Aggiorna il tuo accesso</button></p></div></div>`;
     $("rf").onclick = async () => { $("rf").textContent = "Controllo…"; await fetchEnt(); route(); };
     getDoc(doc(db, "videos", "presentazione")).then(s => {
